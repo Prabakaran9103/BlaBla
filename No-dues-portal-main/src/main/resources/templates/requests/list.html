@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/app.css">
+    <title>Requests</title>
+</head>
+<body>
+<div th:replace="~{fragments/navigation :: navigation}"></div>
+<main>
+<h1 th:text="${requestOwner}">Requests</h1>
+<p><a class="button" sec:authorize="hasRole('STUDENT')" href="/requests/new">Create request</a></p>
+
+<p class="notice" th:if="${#lists.isEmpty(requests)}">No requests have been created.</p>
+<table th:unless="${#lists.isEmpty(requests)}" border="1">
+    <thead>
+    <tr>
+        <th>Request ID</th>
+        <th>Status</th>
+        <th>Student</th>
+        <th>Faculty advisor</th>
+        <th>Updated</th><th>Archive</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="request : ${requests}">
+        <td><a th:href="@{/requests/{id}(id=${request.id})}" th:text="${request.id}"></a></td>
+        <td th:text="${request.status}"></td>
+        <td th:text="${usersById[request.studentId]?.name ?: request.studentId}"></td>
+        <td th:text="${usersById[request.facultyAdvisorId]?.name ?: request.facultyAdvisorId}"></td>
+        <td th:text="${request.updatedAt}"></td>
+        <td>
+            <span class="status" th:if="${archivedRequestIds.contains(request.id)}">Archived</span>
+            <form method="post" class="inline-form"
+                  th:if="${requestOwner == 'Archived requests'}"
+                  th:action="@{/requests/{id}/unarchive(id=${request.id})}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit">Unarchive</button>
+            </form>
+            <form method="post" class="inline-form"
+                  th:unless="${archivedRequestIds.contains(request.id)}"
+                  th:action="@{/requests/{id}/archive(id=${request.id})}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button class="button-secondary" type="submit">Archive</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</main>
+</body>
+</html>

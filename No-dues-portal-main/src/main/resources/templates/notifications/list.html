@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/app.css">
+    <title>Notifications</title>
+</head>
+<body>
+<div th:replace="~{fragments/navigation :: navigation}"></div>
+<main>
+    <h1>Notifications</h1>
+    <p class="notice" th:if="${#lists.isEmpty(notifications)}">No notifications.</p>
+    <ul th:unless="${#lists.isEmpty(notifications)}">
+        <li th:each="notification : ${notifications}">
+            <strong th:if="${!notification.read}">New: </strong>
+            <span th:text="${notification.message}"></span>
+            <span class="muted" th:text="${notification.createdAt}"></span>
+            <form th:if="${!notification.read}" method="post"
+                  th:action="@{/notifications/{id}/read(id=${notification.id})}"
+                  class="inline-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit">Mark read</button>
+            </form>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

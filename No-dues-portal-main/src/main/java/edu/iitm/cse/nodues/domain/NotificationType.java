@@ -1,0 +1,13 @@
+package edu.iitm.cse.nodues.domain;
+
+public enum NotificationType {
+    REQUEST_FORWARDED,
+    FACULTY_APPROVED,
+    FACULTY_REJECTED,
+    REQUEST_UPDATED,
+    DECISION_CHANGED,
+    READY_FOR_CLOSURE,
+    REQUEST_CLOSED,
+    REQUEST_DELETED,
+    REQUEST_RESTORED
+}

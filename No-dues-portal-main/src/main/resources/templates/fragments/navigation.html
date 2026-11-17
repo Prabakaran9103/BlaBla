@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<div th:fragment="navigation">
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span>No Dues Portal</span>
+        </a>
+    </header>
+    <nav class="site-nav">
+        <a sec:authorize="isAnonymous()" href="/">Home</a>
+        <a sec:authorize="isAuthenticated()" href="/dashboard">Dashboard</a>
+        <a sec:authorize="hasRole('STUDENT')" href="/requests/new">New request</a>
+        <a sec:authorize="hasRole('STUDENT')" href="/requests">My requests</a>
+        <a sec:authorize="hasRole('FACULTY')" href="/requests">Assigned requests</a>
+        <a sec:authorize="hasAnyRole('STAFF', 'ADMIN')" href="/requests">All requests</a>
+        <a sec:authorize="isAuthenticated()" href="/notifications">Notifications</a>
+        <a sec:authorize="isAuthenticated()" href="/profile">Profile</a>
+        <a sec:authorize="isAuthenticated()" href="/requests/archive">Archive</a>
+        <a sec:authorize="hasRole('ADMIN')" href="/admin">Admin controls</a>
+        <a sec:authorize="isAnonymous()" href="/register">Create account</a>
+        <a sec:authorize="isAnonymous()" href="/login">Login</a>
+        <form sec:authorize="isAuthenticated()" method="post" action="/logout">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit">Logout</button>
+        </form>
+    </nav>
+</div>
+
+</html>

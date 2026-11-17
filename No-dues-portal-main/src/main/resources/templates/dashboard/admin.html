@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/css/app.css"><title>Admin dashboard</title></head>
+<body>
+<div th:replace="~{fragments/navigation :: navigation}"></div>
+<main>
+<h1>Admin dashboard</h1>
+<p th:text="${'Signed in as ' + user.name}"></p>
+<p><a href="/admin">Manage users and settings</a></p>
+<p><a href="/requests">View all requests</a></p>
+</main>
+</body>
+</html>

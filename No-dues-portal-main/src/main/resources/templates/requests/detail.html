@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/app.css">
+    <title>Request details</title>
+</head>
+<body>
+<div th:replace="~{fragments/navigation :: navigation}"></div>
+<main class="request-detail">
+<p><a class="button button-secondary" href="/">Home</a>
+    <a class="button button-secondary" href="/requests">Back to requests</a></p>
+<h1>Request details</h1>
+
+<dl>
+    <dt>Request ID</dt><dd th:text="${request.id}"></dd>
+    <dt>Status</dt><dd><span class="status" th:text="${request.status}"></span></dd>
+    <dt>Student</dt><dd th:text="${usersById[request.studentId]?.name ?: request.studentId}"></dd>
+    <dt>Faculty advisor</dt><dd th:text="${usersById[request.facultyAdvisorId]?.name ?: request.facultyAdvisorId}"></dd>
+    <dt>Staff owner</dt><dd th:text="${request.assignedStaffId == null ? 'Not assigned' : usersById[request.assignedStaffId]?.name}"></dd>
+    <dt>Current version</dt><dd th:text="${request.currentVersionNumber}"></dd>
+</dl>
+
+<section class="card" th:if="${!#lists.isEmpty(files)}">
+    <h2>Files</h2>
+    <ul>
+        <li th:each="file : ${files}">
+            <span th:text="${file.originalFileName}"></span>
+            <span class="muted" th:text="${'Version ' + file.versionNumber + ', ' + file.fileType}"></span>
+            <a class="button button-secondary"
+               th:href="@{/requests/{requestId}/files/{fileId}(requestId=${request.id}, fileId=${file.id})}">
+                Download
+            </a>
+        </li>
+    </ul>
+</section>
+
+<form method="post" th:action="@{/requests/{id}/archive(id=${request.id})}">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <button class="button-secondary" type="submit">Archive for me</button>
+</form>
+
+<section class="card" th:if="${currentUser.role.name() == 'FACULTY' and (request.status.name() == 'IN_FACULTY_REVIEW' or request.status.name() == 'REVISION_REQUESTED')}">
+    <h2>Faculty decision</h2>
+    <form method="post" th:action="@{/requests/{id}/faculty/approve(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <label for="remark">Approval remark (optional)</label>
+        <textarea id="remark" name="remark" rows="3"></textarea>
+        <button type="submit">Approve request</button>
+    </form>
+    <form method="post" th:action="@{/requests/{id}/faculty/reject(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <label for="reason">Reason for rejection</label>
+        <textarea id="reason" name="reason" rows="3" required></textarea>
+        <button type="submit">Request correction</button>
+    </form>
+    <form method="post" th:action="@{/requests/{id}/faculty/withdraw(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button class="button-secondary" type="submit">Withdraw my decision</button>
+    </form>
+</section>
+
+<section class="card" th:if="${currentUser.role.name() == 'STAFF' and request.status.name() == 'WAITING_FOR_STAFF'}">
+    <h2>Forward to Faculty</h2>
+    <form method="post" th:action="@{/requests/{id}/forward(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <label for="facultyIds">Faculty members (up to 5)</label>
+        <select id="facultyIds" name="facultyIds" multiple size="5">
+            <option th:each="facultyMember : ${faculty}"
+                    th:value="${facultyMember.id}"
+                    th:text="${facultyMember.name + ' (' + facultyMember.email + ')'}"></option>
+        </select>
+        <button type="submit">Forward request</button>
+    </form>
+</section>
+
+<section class="card" th:if="${currentUser.role.name() == 'STAFF' and request.status.name() == 'AWAITING_STAFF_CLOSURE'}">
+    <h2>Close request</h2>
+    <form method="post" th:action="@{/requests/{id}/close(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button type="submit">Close request</button>
+    </form>
+    <form method="post" enctype="multipart/form-data"
+          th:action="@{/requests/{id}/certificate(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <label for="certificate">Certificate file (optional)</label>
+        <input id="certificate" name="file" type="file" accept=".pdf,.png,.jpg,.jpeg" required>
+        <button type="submit">Upload certificate</button>
+    </form>
+</section>
+
+<section class="card" th:if="${currentUser.role.name() == 'STAFF' or currentUser.role.name() == 'ADMIN'}">
+    <h2>Request management</h2>
+    <form method="post" th:if="${currentUser.role.name() == 'ADMIN'
+        or (currentUser.role.name() == 'STAFF' and request.assignedStaffId == currentUser.id)}"
+          th:action="@{/requests/{id}/delete(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button type="submit">Delete request</button>
+    </form>
+    <form method="post" th:if="${request.status.name() == 'DELETED' and currentUser.role.name() == 'STAFF'}"
+          th:action="@{/requests/{id}/restore(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button class="button-secondary" type="submit">Restore request</button>
+    </form>
+</section>
+
+<section class="card" th:if="${currentUser.role.name() == 'STUDENT' and request.status.name() == 'REVISION_REQUESTED'}">
+    <h2>Submit correction</h2>
+    <form method="post" th:action="@{/requests/{id}/resubmit(id=${request.id})}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <label for="resubmitDetails">Updated request details</label>
+        <textarea id="resubmitDetails" name="details" rows="6" required></textarea>
+        <button type="submit">Resubmit request</button>
+    </form>
+</section>
+
+<h2>Versions</h2>
+<ul>
+    <li th:each="version : ${versions}">
+        Version <span th:text="${version.versionNumber}"></span>:
+        <span th:text="${version.details}"></span>
+    </li>
+</ul>
+
+<h2>Faculty assignments</h2>
+<p th:if="${#lists.isEmpty(assignments)}">No Faculty assignments.</p>
+<ul>
+    <li th:each="assignment : ${assignments}">
+        <span th:text="${usersById[assignment.facultyUserId]?.name ?: assignment.facultyUserId}"></span> -
+        <span th:text="${assignment.currentDecision}"></span>
+    </li>
+</ul>
+
+<h2>History</h2>
+<ul>
+    <li th:each="entry : ${history}">
+        <span th:text="${entry.occurredAt}"></span> -
+        <span th:text="${entry.actionType}"></span> -
+        <span th:text="${entry.remark ?: ''}"></span>
+    </li>
+</ul>
+</main>
+</body>
+</html>
